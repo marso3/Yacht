@@ -18,9 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -41,8 +38,7 @@ class MainActivity : ComponentActivity()
 				Surface(modifier = Modifier.fillMaxSize(),
 					color = MaterialTheme.colorScheme.background
 				) {
-					val vm =  YachtViewModel()
-					DicePanel(vm)
+					DicePanel(YachtViewModel())
 				}
 			}
 		}
@@ -62,24 +58,24 @@ class MainActivity : ComponentActivity()
 		YachtTheme {
 			Column(modifier = Modifier.padding(10.dp)) {
 
-				DiceBox(vm.diceList.collectAsState(), vm.clickDice)
+				DiceBox(vm.diceList, vm.clickDice)
 
 				DiceButton(vm.clickRollButton, vm.canClickRollButton)
 			}
 		}
 	}
 	@Composable
-	fun DiceBox(diceList: State<List<Dice>>, clickDice: (Dice) -> Unit) {
+	fun DiceBox(diceList: List<Dice>, clickDice : (Int) -> Unit) {
 		Row(Modifier.background(MaterialTheme.colorScheme.secondary))
 		{
-			for (selectedDice in diceList.value)
+			for (selectedDice in diceList)
 			{
 				Box(modifier = Modifier.weight(1f)) {
 					Image(painter = painterResource(id = diceIcons[selectedDice.number]),
 						contentDescription = null,
 						modifier = Modifier
 							.padding(5.dp)
-							.clickable { clickDice(selectedDice) })
+							.clickable { clickDice(selectedDice.itemId) })
 					if (selectedDice.isLocked)
 					{
 						Image(painter = painterResource(id = lockIcon),
@@ -92,7 +88,7 @@ class MainActivity : ComponentActivity()
 			}
 		}
 	}
-	@RequiresApi(Build.VERSION_CODES.N)
+
 	@Composable
 	fun DiceButton(clickRollButton: () -> Unit, canClickRollButton: Boolean) {
 		Row(Modifier.background(MaterialTheme.colorScheme.secondary)) {
@@ -101,7 +97,7 @@ class MainActivity : ComponentActivity()
 				Modifier.weight(1f),
 				enabled = canClickRollButton
 			) {
-				Text(text = "Tira!")
+				Text(text = "Roll!")
 			}
 		}
 	}
