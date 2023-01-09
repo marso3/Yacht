@@ -1,5 +1,6 @@
 package com.montilivi.yacht
 
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,15 +9,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +32,7 @@ class MainActivity : ComponentActivity()
 				Surface(modifier = Modifier.fillMaxSize(),
 					color = MaterialTheme.colorScheme.background
 				) {
-					DicePanel(YachtViewModel())
+					Screen(YachtViewModel())
 				}
 			}
 		}
@@ -47,50 +41,126 @@ class MainActivity : ComponentActivity()
 	@Preview(showBackground = true)
 	@Composable
 	fun DefaultPreview() {
-		YachtTheme() {
-			DicePanel(vm = YachtViewModel())
+		YachtTheme {
+			Screen(vm = YachtViewModel())
 		}
 	}
 
+	@OptIn(ExperimentalMaterial3Api::class)
+	@RequiresApi(Build.VERSION_CODES.N)
+	@Composable
+	fun Screen(vm : YachtViewModel) {
+		Scaffold(
+			topBar =
+			{ TopPanel(vm.player.globalScore, vm.player.globalScore) },
+
+			content =
+			{ innerPadding -> AssignmentsPanel(vm.player, vm.player, innerPadding) },
+
+			bottomBar =
+			{ DicePanel(vm = vm) },
+
+			modifier = Modifier.padding(5.dp)
+		)
+	}
+	//region Top Panel Block
+	@OptIn(ExperimentalMaterial3Api::class)
+	@Composable
+	fun TopPanel(p1Score : Int, p2Score : Int) {
+		CenterAlignedTopAppBar(
+			title = {
+				Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+					ScoreBox(p1Score, "Player 1")
+					ScoreBox(p2Score, "Player 2")
+				}
+			}
+		)
+	}
+	@Composable
+	fun ScoreBox(score : Int, name : String) {
+		Column() {
+			Text(text = score.toString())
+			Text(text = name)
+		}
+	}
+	//endregion
+
+	//region Content Block
+	@Composable
+	fun AssignmentsPanel(player1 : Player, player2: Player, padding : PaddingValues) {
+		Row(Modifier.padding(padding)) {
+
+			AssignmentColumn(player1.minorScores)
+
+			//AssignmentColumn()
+		}
+	}
+	@Composable
+	fun AssignmentColumn(minorScores : List<Int>) {
+		Column() {
+
+			AssignmentRow(1, minorScores[0])
+
+			AssignmentRow(2, minorScores[1])
+
+			AssignmentRow(3, minorScores[2])
+
+			AssignmentRow(4, minorScores[3])
+
+			AssignmentRow(5, minorScores[4])
+
+			AssignmentRow(6, minorScores[5])
+		}
+	}
+	@Composable
+	fun AssignmentRow(descriptionIcon : Int, score : Int) {
+		Row() {
+			Image(
+				painter = painterResource(id = diceIcons[0]),
+				contentDescription = "temp",
+				modifier = Modifier.weight(1f))
+			Text(text = score.toString())
+		}
+	}
+	//endregion
+
+	//region Dice Block
 	@RequiresApi(Build.VERSION_CODES.N)
 	@Composable
 	fun DicePanel(vm : YachtViewModel) {
-		YachtTheme {
-			Column(modifier = Modifier.padding(10.dp)) {
+		Column(modifier = Modifier.padding(8.dp)) {
 
-				DiceBox(vm.diceList, vm.clickDice)
+			DiceBox(vm.diceList, vm.clickDice)
 
-				DiceButton(vm.clickRollButton, vm.canClickRollButton)
-			}
+			RollButton(vm.clickRollButton, vm.canClickRollButton)
 		}
 	}
 	@Composable
 	fun DiceBox(diceList: List<Dice>, clickDice : (Int) -> Unit) {
 		Row(Modifier.background(MaterialTheme.colorScheme.secondary))
 		{
-			for (selectedDice in diceList)
-			{
+			for (selectedDice in diceList) {
 				Box(modifier = Modifier.weight(1f)) {
 					Image(painter = painterResource(id = diceIcons[selectedDice.number]),
 						contentDescription = null,
 						modifier = Modifier
 							.padding(5.dp)
 							.clickable { clickDice(selectedDice.itemId) })
-					if (selectedDice.isLocked)
-					{
-						Image(painter = painterResource(id = lockIcon),
+					if (selectedDice.isLocked) {
+						Image(
+							painter = painterResource(id = lockIcon),
 							contentDescription = null,
 							Modifier
 								.align(Alignment.BottomEnd)
-								.padding(bottom = 10.dp, end = 5.dp))
+								.padding(bottom = 10.dp, end = 5.dp)
+						)
 					}
 				}
 			}
 		}
 	}
-
 	@Composable
-	fun DiceButton(clickRollButton: () -> Unit, canClickRollButton: Boolean) {
+	fun RollButton(clickRollButton: () -> Unit, canClickRollButton: Boolean) {
 		Row(Modifier.background(MaterialTheme.colorScheme.secondary)) {
 			Button(
 				onClick = clickRollButton,
@@ -101,4 +171,5 @@ class MainActivity : ComponentActivity()
 			}
 		}
 	}
+	//endregion
 }

@@ -22,19 +22,30 @@ class YachtViewModel : ViewModel()
         const val lockIcon = R.drawable.lock_icon
         const val diceNumber = 5
     }
+    //region Attributes
+    private var _player by mutableStateOf(Player())
+    val player = _player
 
-
+    //region Dice attributes
     private val _diceList = mutableStateListOf<Dice>()
     val diceList : List<Dice> = _diceList
     private var diceRollCounter by mutableStateOf(0)
     private var _canClickRollButton by mutableStateOf(true)
     val canClickRollButton = _canClickRollButton
+    //endregion
 
+    //endregion
+
+    //region Start
     init {
         start()
     }
+    private fun start() {
+        diceStart()
+    }
+    //endregion
 
-    //Called on dice click
+    //region Dice events and functions
     val clickDice = { id : Int ->
         val index = _diceList.indexOfFirst { it.itemId == id }
         val number : Int
@@ -72,7 +83,7 @@ class YachtViewModel : ViewModel()
             for (i in 0 until diceNumber) {
                 if (!_diceList[i].isLocked)
                 {
-                    roll(i)
+                    diceRoll(i)
                 }
             }
             diceRollCounter++
@@ -81,28 +92,31 @@ class YachtViewModel : ViewModel()
         //reset roll state
         else {
             for (dice in _diceList) {
-                reset(dice.itemId)
+                diceReset(dice.itemId)
             }
             diceRollCounter = 0
         }
 
         if (diceRollCounter > 3)
             _canClickRollButton = false
+
+        _player.updateScores(_diceList)
     }
 
-    private fun start() {
+    //region Dice functions
+    private fun diceStart() {
         for (pos in 0 until diceNumber) {
             _diceList.add(Dice(pos, 0, -1, false))
         }
         diceRollCounter = 0
         _canClickRollButton = true
     }
-    private fun roll(id : Int) {
+    private fun diceRoll(id : Int) {
         val index = _diceList.indexOfFirst { it.itemId == id }
         val number = Random.nextInt(1,7)
         _diceList[index] = _diceList[index].copy(number)
     }
-    private fun reset(id: Int) {
+    private fun diceReset(id: Int) {
         val index = _diceList.indexOfFirst { it.itemId == id }
 
         val number = 0
@@ -111,4 +125,6 @@ class YachtViewModel : ViewModel()
 
         _diceList[index] = _diceList[index].copy(number, momentLocked, isLocked)
     }
+    //endregion
+    //endregion
 }
