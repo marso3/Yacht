@@ -3,10 +3,10 @@ package com.montilivi.yacht
 import androidx.compose.runtime.*
 
 class Player {
-    var globalScore by mutableStateOf(0)
 
+    //region Temp Scores
     //each array position represents a value from 1 to 6
-    var minorScores : MutableState<IntArray> = mutableStateOf(IntArray(6) { 0 })
+    var minorScores : IntArray by mutableStateOf(IntArray(6) { 0 })
 
     var smallStraightScore by mutableStateOf(0)
     var largeStraightScore by mutableStateOf(0)
@@ -14,13 +14,18 @@ class Player {
     var pokerScore by mutableStateOf(0)
     var yachtScore by mutableStateOf(0)
     var playerChoiceScore by mutableStateOf(0)
+    //endregion
+
+    var globalScore by mutableStateOf(0)
+    var definitiveIndividualScores by mutableStateOf(IntArray(12) { 0 })
+    var isDefinitiveScoreSet by mutableStateOf(Array(12) { false })
 
     fun updateScores(diceList : List<Dice>) {
 
-        resetPoints()
+        minorScores = IntArray(6) { 0 }
 
         for (dice in diceList) {
-            minorScores.value         [ dice.number - 1] += dice.number
+            minorScores[ dice.number - 1] += dice.number
         }
 
         smallStraightScore = checkSmallStraight()
@@ -31,45 +36,47 @@ class Player {
         playerChoiceScore = checkPlayerChoice()
     }
 
+    //region Scores' logic
     private fun checkSmallStraight(): Int {
-        if (minorScores[0] == 0 || minorScores[5] == 0)
-        {
-            if (!minorScores.withIndex().any { it.value % (it.index+1) > 1 })
-                return 30
+        var flag = 0
+        for (i in 0 .. 5) {
+            if (minorScores[i] >= 1) flag++
+            else if (minorScores[i] == 0) flag = 0
+            if (flag == 4) return 30
         }
         return 0
     }
 
     private fun checkLargeStraight(): Int {
-        if (minorScores.withIndex().all { it.value % (it.index+1) == 1 })
+        if (minorScores[0] == 0 || minorScores[5] == 0)
         {
-            return 40
+            if (!minorScores.withIndex().any { it.value / (it.index+1) > 1 })
+                return 40
         }
         return 0
     }
 
     private fun checkFullHouse(): Int {
-        val existsThree = minorScores.withIndex().any { it.value % (it.index+1) == 3 }
-        val existsPair =  minorScores.withIndex().any { it.value % (it.index+1) == 2 }
+        val existsThree = minorScores.withIndex().any { it.value / (it.index+1) == 3 }
+        val existsPair =  minorScores.withIndex().any { it.value / (it.index+1) == 2 }
 
         if (existsThree && existsPair)
-        {
-            return minorScores[minorScores.indexOfFirst { existsThree } + 1] +
-                   minorScores[minorScores.indexOfFirst { existsPair } + 1]
-        }
-        return 0
-    }
-
-    private fun checkPoker(): Int {
-        if (minorScores.withIndex().any { it.value % (it.index+1) == 4 })
         {
             return minorScores.sum()
         }
         return 0
     }
 
+    private fun checkPoker(): Int {
+        if (minorScores.withIndex().any { it.value / (it.index+1) >= 4 })
+        {
+            return minorScores.maxOrNull() ?: 0
+        }
+        return 0
+    }
+
     private fun checkYacht(): Int {
-        if (minorScores.withIndex().any { it.value % (it.index+1) == 5 })
+        if (minorScores.withIndex().any { it.value / (it.index+1) == 5 })
         {
             return 50
         }
@@ -79,10 +86,13 @@ class Player {
     private fun checkPlayerChoice(): Int {
         return minorScores.sum()
     }
+    //endregion
 
     private fun resetPoints() {
         minorScores = IntArray(6) { 0 }
     }
 
+    fun lockDefinitiveScore() {
 
+    }
 }

@@ -19,33 +19,60 @@ class YachtViewModel : ViewModel()
             R.drawable.dice_5,
             R.drawable.dice_6,
         )
+        val assignmentDiceIcons = listOf(
+            R.drawable.assignment_dice_1,
+            R.drawable.assignment_dice_2,
+            R.drawable.assignment_dice_3,
+            R.drawable.assignment_dice_4,
+            R.drawable.assignment_dice_5,
+            R.drawable.assignment_dice_6,
+        )
+        val assignmentSpecialIcons = listOf(
+            R.drawable.assignment_smallstraight,
+            R.drawable.assignment_largestraight,
+            R.drawable.assignment_fullhouse,
+            R.drawable.assignment_poker,
+            R.drawable.assignment_yacht,
+            R.drawable.assignment_playerchoice,
+        )
         const val lockIcon = R.drawable.lock_icon
         const val diceNumber = 5
     }
     //region Attributes
-    private var _player by mutableStateOf(Player())
-    val player = _player
 
-    //region Dice attributes
-    private val _diceList = mutableStateListOf<Dice>()
-    val diceList : List<Dice> = _diceList
-    private var diceRollCounter by mutableStateOf(0)
-    private var _canClickRollButton by mutableStateOf(true)
-    val canClickRollButton = _canClickRollButton
-    //endregion
+        //region Player attributes
+        private var _player by mutableStateOf(Player())
+        val player = _player
+        private var definitiveScoreSelectedId by mutableStateOf(0)
+        private var definitiveScorePreviousId by mutableStateOf(-1)
+        //endregion
+
+        //region Dice attributes
+        private val _diceList = mutableStateListOf<Dice>()
+        val diceList : List<Dice> = _diceList
+        private var diceRollCounter by mutableStateOf(0)
+        private var _canClickRollButton by mutableStateOf(true)
+        val canClickRollButton = _canClickRollButton
+        private var _canClickPlayButton by mutableStateOf(false)
+        val canClickPlayButton = _canClickPlayButton
+        //endregion
 
     //endregion
 
     //region Start
+
     init {
         start()
     }
+
     private fun start() {
         diceStart()
     }
+
     //endregion
 
     //region Dice events and functions
+
     val clickDice = { id : Int ->
         val index = _diceList.indexOfFirst { it.itemId == id }
         val number : Int
@@ -78,6 +105,7 @@ class YachtViewModel : ViewModel()
         }
         _diceList[index] = _diceList[index].copy(number, momentLocked, isLocked)
     }
+
     val clickRollButton: () -> Unit = {
         if (_canClickRollButton) {
             for (i in 0 until diceNumber) {
@@ -87,6 +115,7 @@ class YachtViewModel : ViewModel()
                 }
             }
             diceRollCounter++
+            _canClickPlayButton = true
         }
 
         //reset roll state
@@ -95,12 +124,49 @@ class YachtViewModel : ViewModel()
                 diceReset(dice.itemId)
             }
             diceRollCounter = 0
+            _canClickPlayButton = false
         }
 
-        if (diceRollCounter > 3)
+        if (diceRollCounter > 3) {
             _canClickRollButton = false
+        }
 
         _player.updateScores(_diceList)
+    }
+
+    val clickPlayButton: () -> Unit = {
+        _player.isDefinitiveScoreSet[definitiveScoreSelectedId] = true
+        definitiveScorePreviousId = -1
+        _canClickPlayButton = true
+    }
+
+    val clickScore = { id : Int ->
+        if (!_player.isDefinitiveScoreSet[id]) {
+            definitiveScoreSelectedId = id
+
+            //assign the score to the selected box
+            when (id) {
+                0 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                1 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                2 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                3 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                4 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                5 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
+                6 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.smallStraightScore
+                7 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.largeStraightScore
+                8 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.fullHouseScore
+                9 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.pokerScore
+                10-> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.yachtScore
+                11-> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.playerChoiceScore
+            }
+
+            if (definitiveScorePreviousId != -1)
+                _player.definitiveIndividualScores[definitiveScorePreviousId] = 0
+
+            definitiveScorePreviousId = id
+
+            _player.globalScore = _player.definitiveIndividualScores.sum()
+        }
     }
 
     //region Dice functions
@@ -126,5 +192,6 @@ class YachtViewModel : ViewModel()
         _diceList[index] = _diceList[index].copy(number, momentLocked, isLocked)
     }
     //endregion
+
     //endregion
 }

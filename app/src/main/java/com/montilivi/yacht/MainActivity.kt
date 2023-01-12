@@ -1,6 +1,5 @@
 package com.montilivi.yacht
 
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,24 +14,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.montilivi.yacht.YachtViewModel.Companion.assignmentDiceIcons
+import com.montilivi.yacht.YachtViewModel.Companion.assignmentSpecialIcons
 import com.montilivi.yacht.YachtViewModel.Companion.diceIcons
 import com.montilivi.yacht.YachtViewModel.Companion.lockIcon
-import com.montilivi.yacht.ui.theme.YachtTheme
 
 class MainActivity : ComponentActivity()
 {
+	var vm =YachtViewModel()
 	@RequiresApi(Build.VERSION_CODES.N)
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
 		super.onCreate(savedInstanceState)
 		setContent {
-			YachtTheme { // A surface container using the 'background' color from the theme
+			MaterialTheme { // A surface container using the 'background' color from the theme
 				Surface(modifier = Modifier.fillMaxSize(),
 					color = MaterialTheme.colorScheme.background
 				) {
-					Screen(YachtViewModel())
+					Screen(vm)
 				}
 			}
 		}
@@ -41,7 +44,7 @@ class MainActivity : ComponentActivity()
 	@Preview(showBackground = true)
 	@Composable
 	fun DefaultPreview() {
-		YachtTheme {
+		MaterialTheme {
 			Screen(vm = YachtViewModel())
 		}
 	}
@@ -55,12 +58,14 @@ class MainActivity : ComponentActivity()
 			{ TopPanel(vm.player.globalScore, vm.player.globalScore) },
 
 			content =
-			{ innerPadding -> AssignmentsPanel(vm.player, vm.player, innerPadding) },
+			{ innerPadding -> AssignmentsPanel(vm.player, vm.player, vm.clickScore, innerPadding) },
 
 			bottomBar =
 			{ DicePanel(vm = vm) },
 
-			modifier = Modifier.padding(5.dp)
+			modifier = Modifier
+				.padding(5.dp)
+				.background(MaterialTheme.colorScheme.background)
 		)
 	}
 	//region Top Panel Block
@@ -69,16 +74,16 @@ class MainActivity : ComponentActivity()
 	fun TopPanel(p1Score : Int, p2Score : Int) {
 		CenterAlignedTopAppBar(
 			title = {
-				Row(horizontalArrangement = Arrangement.SpaceEvenly) {
-					ScoreBox(p1Score, "Player 1")
-					ScoreBox(p2Score, "Player 2")
+				Row() {
+					ScoreBox(p1Score, "Player 1", Modifier.weight(1f))
+					ScoreBox(p2Score, "Player 2", Modifier.weight(1f))
 				}
 			}
 		)
 	}
 	@Composable
-	fun ScoreBox(score : Int, name : String) {
-		Column() {
+	fun ScoreBox(score : Int, name : String, modifier: Modifier) {
+		Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
 			Text(text = score.toString())
 			Text(text = name)
 		}
@@ -87,39 +92,73 @@ class MainActivity : ComponentActivity()
 
 	//region Content Block
 	@Composable
-	fun AssignmentsPanel(player1 : Player, player2: Player, padding : PaddingValues) {
+	fun AssignmentsPanel(player1 : Player, player2: Player, clickScore : (Int) -> Unit, padding : PaddingValues) {
 		Row(Modifier.padding(padding)) {
 
-			AssignmentColumn(player1.minorScores)
+			Box(Modifier.weight(1f)) {
+				AssignmentLeftColumn(player1.minorScores, clickScore)
+			}
 
-			//AssignmentColumn()
+			Box(Modifier.weight(1f)) {
+				AssignmentRightColumn(
+					player1.smallStraightScore,
+					player1.largeStraightScore,
+					player1.fullHouseScore,
+					player1.pokerScore,
+					player1.yachtScore,
+					player1.playerChoiceScore,
+					clickScore
+				)
+			}
+
 		}
 	}
 	@Composable
-	fun AssignmentColumn(minorScores : List<Int>) {
-		Column() {
-
-			AssignmentRow(1, minorScores[0])
-
-			AssignmentRow(2, minorScores[1])
-
-			AssignmentRow(3, minorScores[2])
-
-			AssignmentRow(4, minorScores[3])
-
-			AssignmentRow(5, minorScores[4])
-
-			AssignmentRow(6, minorScores[5])
+	fun AssignmentLeftColumn(minorScores : IntArray, clickScore: (Int) -> Unit) {
+		Column(Modifier.fillMaxWidth()) {
+			for (i in 0 .. 5) {
+				AssignmentRow(i, clickScore, assignmentDiceIcons[i], minorScores[i], Modifier.weight(1f))
+			}
 		}
 	}
 	@Composable
-	fun AssignmentRow(descriptionIcon : Int, score : Int) {
-		Row() {
+	fun AssignmentRightColumn(smallStraightScore: Int, largeStraightScore: Int,
+							  fullHouseScore: Int, pokerScore: Int,
+							  yachtScore: Int, playerChoiceScore: Int,
+							  clickScore: (Int) -> Unit
+							  ) {
+		Column(Modifier.fillMaxWidth()) {
+
+			AssignmentRow(6, clickScore, assignmentSpecialIcons[0], smallStraightScore, Modifier.weight(1f))
+
+			AssignmentRow(7, clickScore, assignmentSpecialIcons[1], largeStraightScore, Modifier.weight(1f))
+
+			AssignmentRow(8, clickScore, assignmentSpecialIcons[2], fullHouseScore, Modifier.weight(1f))
+
+			AssignmentRow(9, clickScore, assignmentSpecialIcons[3], pokerScore, Modifier.weight(1f))
+
+			AssignmentRow(10, clickScore, assignmentSpecialIcons[4], yachtScore, Modifier.weight(1f))
+
+			AssignmentRow(11, clickScore, assignmentSpecialIcons[5], playerChoiceScore, Modifier.weight(1f))
+		}
+	}
+	@Composable
+	fun AssignmentRow(definitiveScoreId : Int, clickScore: (Int) -> Unit, assignmentIcon : Int, score : Int, modifier: Modifier = Modifier) {
+		Row(modifier = modifier.then(Modifier.padding(5.dp))) {
 			Image(
-				painter = painterResource(id = diceIcons[0]),
-				contentDescription = "temp",
-				modifier = Modifier.weight(1f))
-			Text(text = score.toString())
+				painter = painterResource(id = assignmentIcon),
+				contentDescription = null,
+				Modifier.weight(1f)
+				)
+			Text(text = score.toString(),
+				Modifier
+					.fillMaxHeight()
+					.weight(1f)
+					.background(MaterialTheme.colorScheme.secondary)
+					.clickable { clickScore(definitiveScoreId) },
+				textAlign = TextAlign.Center,
+				fontSize = 40.sp,
+			)
 		}
 	}
 	//endregion
@@ -132,7 +171,12 @@ class MainActivity : ComponentActivity()
 
 			DiceBox(vm.diceList, vm.clickDice)
 
-			RollButton(vm.clickRollButton, vm.canClickRollButton)
+			Row() {
+
+				RollButton(vm.clickRollButton, vm.canClickRollButton, Modifier.weight(1f))
+
+				PlayButton(vm.clickPlayButton, vm.canClickPlayButton, Modifier.weight(1f))
+			}
 		}
 	}
 	@Composable
@@ -160,14 +204,26 @@ class MainActivity : ComponentActivity()
 		}
 	}
 	@Composable
-	fun RollButton(clickRollButton: () -> Unit, canClickRollButton: Boolean) {
-		Row(Modifier.background(MaterialTheme.colorScheme.secondary)) {
+	fun RollButton(clickRollButton: () -> Unit, canClickRollButton: Boolean, modifier: Modifier) {
+		Row(modifier = modifier.then(Modifier.background(MaterialTheme.colorScheme.secondary))) {
 			Button(
 				onClick = clickRollButton,
 				Modifier.weight(1f),
 				enabled = canClickRollButton
 			) {
-				Text(text = "Roll!")
+				Text(text = "Roll")
+			}
+		}
+	}
+	@Composable
+	fun PlayButton(clickPlayButton: () -> Unit, canClickPlayButton: Boolean, modifier: Modifier) {
+		Row(modifier = modifier.then(Modifier.background(MaterialTheme.colorScheme.secondary))) {
+			Button(
+				onClick = clickPlayButton,
+				Modifier.weight(1f),
+				enabled = canClickPlayButton
+			) {
+				Text(text = "Play")
 			}
 		}
 	}
