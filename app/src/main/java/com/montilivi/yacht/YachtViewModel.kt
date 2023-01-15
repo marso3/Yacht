@@ -172,19 +172,19 @@ class YachtViewModel : ViewModel()
         diceStart()
     }
 
-    val clickScore = { id : Int ->
-        if (!_player.value.isDefinitiveScoreSet[id]) {
+    val clickScore: (Int) -> Unit = {
+        if (!_player.value.isDefinitiveScoreSet[it]) {
             _canClickPlayButton.value = true
-            _selectedScoreId.value = id
+            _selectedScoreId.value = it
             _player.value._scoreTextColors.value[_selectedScoreId.value] = Color.White
 
             //assign the score to the selected box
-            _player.value.assignIndividualScore(id)
+            _player.value.assignIndividualScore(it)
 
             if (scorePreviousId != -1 && _selectedScoreId.value != scorePreviousId)
                 _player.value.definitiveIndividualScores[scorePreviousId] = 0
 
-            scorePreviousId = id
+            scorePreviousId = it
         }
     }
 

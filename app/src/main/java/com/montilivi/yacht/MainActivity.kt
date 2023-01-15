@@ -11,13 +11,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -179,16 +182,17 @@ class MainActivity : ComponentActivity()
 				contentDescription = null,
 				Modifier.weight(1f)
 				)
-			Text(text = score.toString(),
+			ClickableText(text = AnnotatedString(score.toString()),
 				Modifier
 					.fillMaxHeight()
 					.weight(1f)
-					.background(MaterialTheme.colorScheme.secondary)
-					.clickable {
-						clickScore(scoreId) },
-				color = scoreTextColor,
-				textAlign = TextAlign.Center,
-				fontSize = 40.sp
+					.background(MaterialTheme.colorScheme.secondary),
+				style = TextStyle(
+					color = scoreTextColor,
+					textAlign = TextAlign.Center,
+					fontSize = 40.sp
+				),
+				onClick = { clickScore(scoreId) }
 			)
 		}
 	}
