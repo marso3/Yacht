@@ -1,9 +1,7 @@
 package com.montilivi.yacht
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlin.random.Random
 
@@ -38,25 +36,23 @@ class YachtViewModel : ViewModel()
         const val lockIcon = R.drawable.lock_icon
         const val diceNumber = 5
     }
-    //region Attributes
 
-        //region Player attributes
-        private var _player by mutableStateOf(Player())
-        val player = _player
-        private var definitiveScoreSelectedId by mutableStateOf(0)
-        private var definitiveScorePreviousId by mutableStateOf(-1)
-        //endregion
+    //region Player attributes
+    private var _player = mutableStateOf(Player())
+    val player = _player.value
+    private var _selectedScoreId = mutableStateOf(-1)
+    val selectedScoreId = _selectedScoreId.value
+    private var scorePreviousId by mutableStateOf(-1)
+    //endregion
 
-        //region Dice attributes
-        private val _diceList = mutableStateListOf<Dice>()
-        val diceList : List<Dice> = _diceList
-        private var diceRollCounter by mutableStateOf(0)
-        private var _canClickRollButton by mutableStateOf(true)
-        val canClickRollButton = _canClickRollButton
-        private var _canClickPlayButton by mutableStateOf(false)
-        val canClickPlayButton = _canClickPlayButton
-        //endregion
-
+    //region Dice attributes
+    private val _diceList = mutableStateListOf<Dice>()
+    val diceList : List<Dice> = _diceList
+    private var diceRollCounter by mutableStateOf(0)
+    private var _canClickRollButton = mutableStateOf(true)
+    val canClickRollButton = _canClickRollButton
+    private var _canClickPlayButton = mutableStateOf(false)
+    val canClickPlayButton = _canClickPlayButton
     //endregion
 
     //region Start
@@ -107,7 +103,7 @@ class YachtViewModel : ViewModel()
     }
 
     val clickRollButton: () -> Unit = {
-        if (_canClickRollButton) {
+        if (_canClickRollButton.value) {
             for (i in 0 until diceNumber) {
                 if (!_diceList[i].isLocked)
                 {
@@ -115,68 +111,35 @@ class YachtViewModel : ViewModel()
                 }
             }
             diceRollCounter++
-            _canClickPlayButton = true
         }
-
         //reset roll state
         else {
-            for (dice in _diceList) {
-                diceReset(dice.itemId)
-            }
-            diceRollCounter = 0
-            _canClickPlayButton = false
+            diceStart()
         }
 
-        if (diceRollCounter > 3) {
-            _canClickRollButton = false
-        }
+        _player.value.updateScores(_diceList)
 
-        _player.updateScores(_diceList)
-    }
-
-    val clickPlayButton: () -> Unit = {
-        _player.isDefinitiveScoreSet[definitiveScoreSelectedId] = true
-        definitiveScorePreviousId = -1
-        _canClickPlayButton = true
-    }
-
-    val clickScore = { id : Int ->
-        if (!_player.isDefinitiveScoreSet[id]) {
-            definitiveScoreSelectedId = id
-
-            //assign the score to the selected box
-            when (id) {
-                0 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                1 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                2 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                3 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                4 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                5 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.minorScores[id]
-                6 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.smallStraightScore
-                7 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.largeStraightScore
-                8 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.fullHouseScore
-                9 -> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.pokerScore
-                10-> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.yachtScore
-                11-> if(_player.definitiveIndividualScores[id] == 0) _player.definitiveIndividualScores[id] = _player.playerChoiceScore
-            }
-
-            if (definitiveScorePreviousId != -1)
-                _player.definitiveIndividualScores[definitiveScorePreviousId] = 0
-
-            definitiveScorePreviousId = id
-
-            _player.globalScore = _player.definitiveIndividualScores.sum()
+        if (diceRollCounter > 2) {
+            _canClickRollButton.value = false
         }
     }
+
 
     //region Dice functions
     private fun diceStart() {
+        _diceList.clear()
         for (pos in 0 until diceNumber) {
             _diceList.add(Dice(pos, 0, -1, false))
         }
+        for (i in 0 .. 11) {
+            if (!_player.value.isDefinitiveScoreSet[i])
+                _player.value._scoreTextColors.value[i] = Color.Black
+        }
         diceRollCounter = 0
-        _canClickRollButton = true
+        _canClickRollButton.value = true
+        _canClickPlayButton.value = false
     }
+
     private fun diceRoll(id : Int) {
         val index = _diceList.indexOfFirst { it.itemId == id }
         val number = Random.nextInt(1,7)
@@ -192,6 +155,38 @@ class YachtViewModel : ViewModel()
         _diceList[index] = _diceList[index].copy(number, momentLocked, isLocked)
     }
     //endregion
+
+    //endregion
+
+    //region Score events
+
+    val clickPlayButton: () -> Unit = {
+
+        _player.value.isDefinitiveScoreSet[_selectedScoreId.value] = true
+        _player.value._scoreTextColors.value[_selectedScoreId.value] = Color.Yellow
+        scorePreviousId = -1
+        _selectedScoreId.value = -1
+        _player.value.globalScore = _player.value.definitiveIndividualScores.sum()
+
+        _player.value.updateScores(_diceList)
+        diceStart()
+    }
+
+    val clickScore = { id : Int ->
+        if (!_player.value.isDefinitiveScoreSet[id]) {
+            _canClickPlayButton.value = true
+            _selectedScoreId.value = id
+            _player.value._scoreTextColors.value[_selectedScoreId.value] = Color.White
+
+            //assign the score to the selected box
+            _player.value.assignIndividualScore(id)
+
+            if (scorePreviousId != -1 && _selectedScoreId.value != scorePreviousId)
+                _player.value.definitiveIndividualScores[scorePreviousId] = 0
+
+            scorePreviousId = id
+        }
+    }
 
     //endregion
 }

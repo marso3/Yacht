@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTextApi::class)
+
 package com.montilivi.yacht
 
 import android.os.Build
@@ -13,7 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,7 +29,7 @@ import com.montilivi.yacht.YachtViewModel.Companion.lockIcon
 
 class MainActivity : ComponentActivity()
 {
-	var vm =YachtViewModel()
+	var vm = YachtViewModel()
 	@RequiresApi(Build.VERSION_CODES.N)
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
@@ -58,7 +62,8 @@ class MainActivity : ComponentActivity()
 			{ TopPanel(vm.player.globalScore, vm.player.globalScore) },
 
 			content =
-			{ innerPadding -> AssignmentsPanel(vm.player, vm.player, vm.clickScore, innerPadding) },
+			{ innerPadding -> AssignmentsPanel(vm.player, vm.player,
+				vm.clickScore, vm.selectedScoreId, innerPadding) },
 
 			bottomBar =
 			{ DicePanel(vm = vm) },
@@ -76,7 +81,6 @@ class MainActivity : ComponentActivity()
 			title = {
 				Row() {
 					ScoreBox(p1Score, "Player 1", Modifier.weight(1f))
-					ScoreBox(p2Score, "Player 2", Modifier.weight(1f))
 				}
 			}
 		)
@@ -92,11 +96,13 @@ class MainActivity : ComponentActivity()
 
 	//region Content Block
 	@Composable
-	fun AssignmentsPanel(player1 : Player, player2: Player, clickScore : (Int) -> Unit, padding : PaddingValues) {
+	fun AssignmentsPanel(player1 : Player, player2: Player, clickScore : (Int) -> Unit,
+						 selectedScoreId : Int, padding : PaddingValues) {
 		Row(Modifier.padding(padding)) {
 
 			Box(Modifier.weight(1f)) {
-				AssignmentLeftColumn(player1.minorScores, clickScore)
+				AssignmentLeftColumn(player1.minorScores, player1.isDefinitiveScoreSet,
+					clickScore, selectedScoreId, player1.scoreTextColors)
 			}
 
 			Box(Modifier.weight(1f)) {
@@ -107,17 +113,21 @@ class MainActivity : ComponentActivity()
 					player1.pokerScore,
 					player1.yachtScore,
 					player1.playerChoiceScore,
-					clickScore
+					player1.isDefinitiveScoreSet,
+					clickScore, selectedScoreId, player1.scoreTextColors
 				)
 			}
 
 		}
 	}
 	@Composable
-	fun AssignmentLeftColumn(minorScores : IntArray, clickScore: (Int) -> Unit) {
+	fun AssignmentLeftColumn(minorScores : IntArray, isDefinitiveScoreSet : Array<Boolean>,
+							 clickScore: (Int) -> Unit, selectedScoreId: Int, scoreTextColors : Array<Color>) {
 		Column(Modifier.fillMaxWidth()) {
 			for (i in 0 .. 5) {
-				AssignmentRow(i, clickScore, assignmentDiceIcons[i], minorScores[i], Modifier.weight(1f))
+				AssignmentRow(i, clickScore, assignmentDiceIcons[i], minorScores[i],
+					selectedScoreId, isDefinitiveScoreSet, scoreTextColors[i],
+					Modifier.weight(1f))
 			}
 		}
 	}
@@ -125,25 +135,44 @@ class MainActivity : ComponentActivity()
 	fun AssignmentRightColumn(smallStraightScore: Int, largeStraightScore: Int,
 							  fullHouseScore: Int, pokerScore: Int,
 							  yachtScore: Int, playerChoiceScore: Int,
-							  clickScore: (Int) -> Unit
+							  isDefinitiveScoreSet : Array<Boolean>,
+							  clickScore: (Int) -> Unit, selectedScoreId: Int,
+							  scoreTextColors : Array<Color>
 							  ) {
 		Column(Modifier.fillMaxWidth()) {
 
-			AssignmentRow(6, clickScore, assignmentSpecialIcons[0], smallStraightScore, Modifier.weight(1f))
+			AssignmentRow(6, clickScore, assignmentSpecialIcons[0],
+				smallStraightScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[6], Modifier.weight(1f))
 
-			AssignmentRow(7, clickScore, assignmentSpecialIcons[1], largeStraightScore, Modifier.weight(1f))
+			AssignmentRow(7, clickScore, assignmentSpecialIcons[1],
+				largeStraightScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[7], Modifier.weight(1f))
 
-			AssignmentRow(8, clickScore, assignmentSpecialIcons[2], fullHouseScore, Modifier.weight(1f))
+			AssignmentRow(8, clickScore, assignmentSpecialIcons[2],
+				fullHouseScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[8], Modifier.weight(1f))
 
-			AssignmentRow(9, clickScore, assignmentSpecialIcons[3], pokerScore, Modifier.weight(1f))
+			AssignmentRow(9, clickScore, assignmentSpecialIcons[3],
+				pokerScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[9], Modifier.weight(1f))
 
-			AssignmentRow(10, clickScore, assignmentSpecialIcons[4], yachtScore, Modifier.weight(1f))
+			AssignmentRow(10, clickScore, assignmentSpecialIcons[4],
+				yachtScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[10], Modifier.weight(1f))
 
-			AssignmentRow(11, clickScore, assignmentSpecialIcons[5], playerChoiceScore, Modifier.weight(1f))
+			AssignmentRow(11, clickScore, assignmentSpecialIcons[5],
+				playerChoiceScore, selectedScoreId, isDefinitiveScoreSet,
+				scoreTextColors[11], Modifier.weight(1f))
 		}
 	}
 	@Composable
-	fun AssignmentRow(definitiveScoreId : Int, clickScore: (Int) -> Unit, assignmentIcon : Int, score : Int, modifier: Modifier = Modifier) {
+	fun AssignmentRow(scoreId : Int, clickScore: (Int) -> Unit,
+					  assignmentIcon : Int, score : Int,
+					  selectedScoreId : Int, isDefinitiveScoreSet : Array<Boolean>,
+					  scoreTextColor: Color,
+					  modifier: Modifier = Modifier) {
+
 		Row(modifier = modifier.then(Modifier.padding(5.dp))) {
 			Image(
 				painter = painterResource(id = assignmentIcon),
@@ -155,9 +184,11 @@ class MainActivity : ComponentActivity()
 					.fillMaxHeight()
 					.weight(1f)
 					.background(MaterialTheme.colorScheme.secondary)
-					.clickable { clickScore(definitiveScoreId) },
+					.clickable {
+						clickScore(scoreId) },
+				color = scoreTextColor,
 				textAlign = TextAlign.Center,
-				fontSize = 40.sp,
+				fontSize = 40.sp
 			)
 		}
 	}
@@ -173,9 +204,9 @@ class MainActivity : ComponentActivity()
 
 			Row() {
 
-				RollButton(vm.clickRollButton, vm.canClickRollButton, Modifier.weight(1f))
+				RollButton(vm.clickRollButton, vm.canClickRollButton.value, Modifier.weight(1f))
 
-				PlayButton(vm.clickPlayButton, vm.canClickPlayButton, Modifier.weight(1f))
+				PlayButton(vm.clickPlayButton, vm.canClickPlayButton.value, Modifier.weight(1f))
 			}
 		}
 	}
