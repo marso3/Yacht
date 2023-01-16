@@ -24,9 +24,9 @@ class Player {
 
     var globalScore by mutableStateOf(0)
     var definitiveIndividualScores by mutableStateOf(IntArray(12) { 0 })
-    var isDefinitiveScoreSet by mutableStateOf(Array(12) { false })
+    private var _isDefinitiveScoreSet = mutableStateOf(Array(12) { false })
+    val isDefinitiveScoreSet = _isDefinitiveScoreSet.value
     var _scoreTextColors = mutableStateOf(Array(12) { Color.Black })
-    val scoreTextColors = _scoreTextColors.value
 
     fun updateScores(diceList : List<Dice>) {
 
@@ -114,13 +114,6 @@ class Player {
     }
     //endregion
 
-    private fun resetPoints() {
-        logicMinorScores = IntArray(6) { 0 }
-    }
-
-    private fun lockDefinitiveScore() {
-
-    }
     fun assignIndividualScore(id : Int) {
         when (id) {
             0 -> if (definitiveIndividualScores[id] == 0) definitiveIndividualScores[id] =

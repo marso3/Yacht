@@ -40,8 +40,7 @@ class YachtViewModel : ViewModel()
     //region Player attributes
     private var _player = mutableStateOf(Player())
     val player = _player.value
-    private var _selectedScoreId = mutableStateOf(-1)
-    val selectedScoreId = _selectedScoreId.value
+    var _selectedScoreId = mutableStateOf(-1)
     private var scorePreviousId by mutableStateOf(-1)
     //endregion
 
@@ -65,15 +64,25 @@ class YachtViewModel : ViewModel()
         diceStart()
     }
 
+    fun restart() {
+        _player.value = Player()
+        _selectedScoreId.value = -1
+        scorePreviousId = -1
+
+        diceRollCounter = 0
+        _canClickRollButton.value = true
+        _canClickPlayButton.value = false
+        diceStart()
+    }
     //endregion
 
     //region Dice events and functions
 
     val clickDice = { id : Int ->
         val index = _diceList.indexOfFirst { it.itemId == id }
-        val number : Int
-        val momentLocked : Int
-        val isLocked : Boolean
+        var number : Int
+        var momentLocked : Int
+        var isLocked : Boolean
 
         //enters when dice is reset
         if (diceRollCounter == 0) {
@@ -172,20 +181,25 @@ class YachtViewModel : ViewModel()
         diceStart()
     }
 
-    val clickScore: (Int) -> Unit = {
-        if (!_player.value.isDefinitiveScoreSet[it]) {
-            _canClickPlayButton.value = true
-            _selectedScoreId.value = it
-            _player.value._scoreTextColors.value[_selectedScoreId.value] = Color.White
+    var clickScore: (Int) -> Int = fetchUpcomingTrips@{
 
-            //assign the score to the selected box
+        _selectedScoreId.value = it
+
+        _canClickPlayButton.value = true
+
+        _player.value._scoreTextColors.value[_selectedScoreId.value] = Color.White
+
+        //assign the score to the selected box
+        if (!_player.value.isDefinitiveScoreSet[it])
             _player.value.assignIndividualScore(it)
 
-            if (scorePreviousId != -1 && _selectedScoreId.value != scorePreviousId)
-                _player.value.definitiveIndividualScores[scorePreviousId] = 0
-
-            scorePreviousId = it
+        if (scorePreviousId != -1 && _selectedScoreId.value != scorePreviousId) {
+            _player.value.definitiveIndividualScores[scorePreviousId] = 0
+            _player.value._scoreTextColors.value[scorePreviousId] = Color.Black
         }
+
+        scorePreviousId = it
+        return@fetchUpcomingTrips _selectedScoreId.value
     }
 
     //endregion
